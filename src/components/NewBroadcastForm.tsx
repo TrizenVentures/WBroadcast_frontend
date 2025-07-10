@@ -25,11 +25,11 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [rateLimitPerMinute, setRateLimitPerMinute] = useState(60);
   const [provider, setProvider] = useState("auto");
-  
+
   const [templates, setTemplates] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,8 +68,8 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
   const selectedTemplateData = templates.find(t => t._id === selectedTemplate);
 
   const handleContactToggle = (contactId: string) => {
-    setSelectedContacts(prev => 
-      prev.includes(contactId) 
+    setSelectedContacts(prev =>
+      prev.includes(contactId)
         ? prev.filter(id => id !== contactId)
         : [...prev, contactId]
     );
@@ -85,7 +85,7 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!campaignName.trim()) {
       toast({
         title: "Validation Error",
@@ -215,7 +215,7 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm">{selectedTemplateData.body}</p>
               </div>
-              
+
               {selectedTemplateData.variables && selectedTemplateData.variables.length > 0 && (
                 <div className="space-y-3">
                   <Label>Template Variables</Label>
@@ -250,16 +250,15 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
                 {selectedContacts.length === contacts.length ? 'Deselect All' : 'Select All'}
               </Button>
             </div>
-            
+
             <div className="max-h-60 overflow-y-auto border rounded-lg">
               {contacts.map((contact) => (
                 <div
                   key={contact._id}
-                  className={`p-3 border-b last:border-b-0 cursor-pointer transition-colors ${
-                    selectedContacts.includes(contact._id)
-                      ? "bg-green-50 border-green-200"
-                      : "bg-white hover:bg-gray-50"
-                  }`}
+                  className={`p-3 border-b last:border-b-0 cursor-pointer transition-colors ${selectedContacts.includes(contact._id)
+                    ? "bg-green-50 border-green-200"
+                    : "bg-white hover:bg-gray-50"
+                    }`}
                   onClick={() => handleContactToggle(contact._id)}
                 >
                   <div className="flex items-center justify-between">
@@ -288,7 +287,7 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
                 </div>
               ))}
             </div>
-            
+
             {totalRecipients > 0 && (
               <div className="text-sm text-gray-600">
                 Total recipients: <span className="font-semibold">{totalRecipients.toLocaleString()}</span>
@@ -341,30 +340,28 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
               id="rateLimitPerMinute"
               type="number"
               value={rateLimitPerMinute}
-              onChange={(e) => setRateLimitPerMinute(parseInt(e.target.value) || 60)}
+              onChange={(e) => setRateLimitPerMinute(parseInt(e.target.value) || 1000)}
               min={1}
               max={1000}
-              placeholder="60"
+              placeholder="1000"
             />
             <p className="text-xs text-gray-500">
-              Recommended: 60 messages per minute to comply with WhatsApp limits
+              Default: 1000 messages per minute (WhatsApp Cloud API's rate limit)
             </p>
           </div>
 
           <div className="space-y-2">
             <Label>Messaging Provider</Label>
-            <Select value={provider} onValueChange={setProvider}>
+            <Select value="whatsapp" disabled>
               <SelectTrigger>
                 <SelectValue placeholder="Choose messaging provider" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="auto">Auto (Recommended)</SelectItem>
                 <SelectItem value="whatsapp">WhatsApp Business API</SelectItem>
-                <SelectItem value="twilio">Twilio WhatsApp (Testing)</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500">
-              Auto will use WhatsApp API if configured, otherwise Twilio for testing
+              Using WhatsApp Cloud API for message delivery
             </p>
           </div>
 
@@ -372,8 +369,8 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="flex-1 bg-green-600 hover:bg-green-700"
               disabled={loading || !campaignName || !selectedTemplate || selectedContacts.length === 0}
             >
