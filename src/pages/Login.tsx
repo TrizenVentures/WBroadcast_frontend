@@ -62,7 +62,7 @@ export default function Login() {
   };
 
   const handleSocialLogin = (provider: string) => {
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/auth/${provider}`;
+    window.location.href = `${import.meta.env.VITE_API_URL || 'https://wboardcast-backend.llp.trizenventures.com/api'}/auth/${provider}`;
   };
 
   return (
