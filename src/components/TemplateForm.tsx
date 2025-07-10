@@ -155,6 +155,9 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
                   <SelectItem value="UTILITY">Utility</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-gray-500">
+                Category is for organization purposes. Messages will be sent as plain text.
+              </p>
             </div>
           </div>
 
@@ -185,12 +188,12 @@ export const TemplateForm: React.FC<TemplateFormProps> = ({
               id="body"
               value={formData.body}
               onChange={(e) => setFormData(prev => ({ ...prev, body: e.target.value }))}
-              placeholder="Hello {{name}}, welcome to our service! Your order {{order_id}} is confirmed."
+              placeholder="Hello {{name}}, welcome to our service! This message will be sent as plain text via WhatsApp."
               rows={4}
               required
             />
             <p className="text-sm text-gray-500">
-              Use double curly braces for variables: {`{{variable_name}}`}
+              Use double curly braces for variables: {`{{variable_name}}`}. This content will be sent as plain text via WhatsApp.
             </p>
           </div>
 

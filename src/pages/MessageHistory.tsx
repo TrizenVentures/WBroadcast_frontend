@@ -23,7 +23,8 @@ export default function MessageHistory() {
       message: "Hello John, welcome to our service!",
       status: "delivered",
       timestamp: "2024-01-15 10:30 AM",
-      campaign: "New Product Launch"
+      campaign: "New Product Launch",
+      whatsappMessageId: "wamid.HBgLMTIzNDU2Nzg5MAA="
     },
     {
       id: 2,
@@ -32,7 +33,8 @@ export default function MessageHistory() {
       message: "Your order #12345 has been confirmed",
       status: "read",
       timestamp: "2024-01-15 09:15 AM",
-      campaign: "Order Notifications"
+      campaign: "Order Notifications",
+      whatsappMessageId: "wamid.HBgLMTIzNDU2Nzg5MQA="
     },
     {
       id: 3,
@@ -41,7 +43,8 @@ export default function MessageHistory() {
       message: "Payment reminder for invoice #INV-001",
       status: "failed",
       timestamp: "2024-01-14 02:45 PM",
-      campaign: "Payment Reminders"
+      campaign: "Payment Reminders",
+      whatsappMessageId: null
     },
   ];
 
@@ -133,7 +136,14 @@ export default function MessageHistory() {
                   
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <span>Campaign: {message.campaign}</span>
-                    <span>{message.timestamp}</span>
+                    <div className="flex flex-col items-end">
+                      <span>{message.timestamp}</span>
+                      {message.whatsappMessageId && (
+                        <span className="text-xs text-gray-400">
+                          ID: {message.whatsappMessageId.substring(0, 20)}...
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

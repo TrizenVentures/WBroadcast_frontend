@@ -125,8 +125,8 @@ export default function Settings() {
                 <Badge className="bg-blue-100 text-blue-800">High</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Message Limit:</span>
-                <span className="text-sm">1000/day</span>
+                <span className="text-sm font-medium">Messaging Type:</span>
+                <Badge className="bg-green-100 text-green-800">Plain Text</Badge>
               </div>
             </CardContent>
           </Card>
@@ -168,6 +168,12 @@ export default function Settings() {
                 <Save className="w-4 h-4 mr-2" />
                 Update Profile
               </Button>
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-700">
+                  <strong>Messaging Mode:</strong> Your WhatsApp Business API is configured for plain text messaging. 
+                  Templates are used for content organization and variable substitution only.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

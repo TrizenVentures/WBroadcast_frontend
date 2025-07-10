@@ -148,7 +148,7 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
         variables,
         scheduledAt: scheduledAt.toISOString(),
         rateLimitPerMinute,
-        provider
+        provider: "whatsapp"
       };
 
       await onSubmit(data);
@@ -352,7 +352,7 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
 
           <div className="space-y-2">
             <Label>Messaging Provider</Label>
-            <Select value="whatsapp" disabled>
+            <Select value={provider} onValueChange={setProvider}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose messaging provider" />
               </SelectTrigger>
@@ -361,7 +361,7 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500">
-              Using WhatsApp Cloud API for message delivery
+              Using WhatsApp Cloud API for plain text message delivery
             </p>
           </div>
 

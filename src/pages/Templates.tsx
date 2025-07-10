@@ -122,7 +122,7 @@ export default function Templates() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-2xl font-bold">
-              WhatsApp Templates
+              Message Templates
             </CardTitle>
             <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline">
               <Plus className="mr-2 h-4 w-4" />
@@ -130,6 +130,12 @@ export default function Templates() {
             </Button>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Note:</strong> Templates are used to create plain text messages for WhatsApp. 
+                The message body will be sent directly as text content with variable substitution.
+              </p>
+            </div>
             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
               <div className="col-span-1 md:col-span-2">
                 <Input

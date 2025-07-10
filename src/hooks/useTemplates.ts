@@ -15,7 +15,7 @@ export interface Template {
   category: 'MARKETING' | 'TRANSACTIONAL' | 'UTILITY';
   language: string;
   status: 'draft' | 'pending' | 'approved' | 'rejected';
-  whatsappTemplateId?: string;
+  whatsappTemplateId?: string; // Legacy field, not used for plain text messaging
   createdAt: string;
   updatedAt: string;
 }

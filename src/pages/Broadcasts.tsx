@@ -346,7 +346,7 @@ export default function Broadcasts() {
                       </div>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
-                          <AlertCircle className="w-4 h-4 text-purple-500" />
+                          <CheckCircle className="w-4 h-4 text-purple-500" />
                           <span className="text-sm text-gray-500">Read</span>
                         </div>
                         <p className="font-semibold text-purple-600">{campaign.progress?.read || 0}</p>
