@@ -67,6 +67,20 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
 
   const selectedTemplateData = templates.find(t => t._id === selectedTemplate);
 
+  const isStructuredTemplate = selectedTemplateData?.whatsappTemplateName;
+  const hasButtons = selectedTemplateData?.whatsappConfig?.hasButtons;
+
+  const generatePreview = () => {
+    if (!selectedTemplateData) return '';
+    
+    let preview = selectedTemplateData.body;
+    Object.entries(variables).forEach(([key, value]) => {
+      preview = preview.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || `[${key.toUpperCase()}]`);
+    });
+    
+    return preview;
+  };
+
   const handleContactToggle = (contactId: string) => {
     setSelectedContacts(prev =>
       prev.includes(contactId)
@@ -211,9 +225,43 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
 
           {selectedTemplateData && (
             <div className="space-y-3">
-              <Label>Template Preview</Label>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm">{selectedTemplateData.body}</p>
+              <div className="space-y-2">
+                <Label>Template Information</Label>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-2 h-2 rounded-full ${isStructuredTemplate ? 'bg-blue-500' : 'bg-green-500'}`}></div>
+                    <span className="text-sm font-medium">
+                      {isStructuredTemplate ? 'Structured WhatsApp Template' : 'Plain Text Message'}
+                    </span>
+                  </div>
+                  {isStructuredTemplate && (
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <p>Template Name: <code className="bg-blue-100 px-1 rounded">{selectedTemplateData.whatsappTemplateName}</code></p>
+                      {hasButtons && (
+                        <p className="flex items-center gap-1">
+                          <span>Interactive buttons included</span>
+                          {selectedTemplateData.whatsappConfig?.buttons && (
+                            <span className="text-xs">
+                              ({selectedTemplateData.whatsappConfig.buttons.map(b => b.title).join(', ')})
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {!isStructuredTemplate && (
+                    <p className="text-xs text-green-700">
+                      This message will be sent as plain text using the template content below.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Template Preview</Label>
+                <div className="p-3 bg-gray-50 rounded-lg border">
+                  <p className="text-sm whitespace-pre-wrap">{generatePreview()}</p>
+                </div>
               </div>
 
               {selectedTemplateData.variables && selectedTemplateData.variables.length > 0 && (

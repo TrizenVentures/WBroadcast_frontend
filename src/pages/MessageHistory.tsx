@@ -1,9 +1,14 @@
 
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCampaignMessages } from "@/hooks/useCampaignMessages";
+import { campaignApi } from "@/services/api";
+import { useQuery } from "@tanstack/react-query";
 import { 
   History, 
   Search, 
@@ -11,42 +16,38 @@ import {
   CheckCircle, 
   Clock, 
   XCircle,
-  MessageSquare
+  MessageSquare,
+  Calendar
 } from "lucide-react";
 
 export default function MessageHistory() {
-  const messages = [
-    {
-      id: 1,
-      contact: "John Doe",
-      phone: "+1234567890",
-      message: "Hello John, welcome to our service!",
-      status: "delivered",
-      timestamp: "2024-01-15 10:30 AM",
-      campaign: "New Product Launch",
-      whatsappMessageId: "wamid.HBgLMTIzNDU2Nzg5MAA="
-    },
-    {
-      id: 2,
-      contact: "Jane Smith",
-      phone: "+1234567891",
-      message: "Your order #12345 has been confirmed",
-      status: "read",
-      timestamp: "2024-01-15 09:15 AM",
-      campaign: "Order Notifications",
-      whatsappMessageId: "wamid.HBgLMTIzNDU2Nzg5MQA="
-    },
-    {
-      id: 3,
-      contact: "Bob Wilson",
-      phone: "+1234567892",
-      message: "Payment reminder for invoice #INV-001",
-      status: "failed",
-      timestamp: "2024-01-14 02:45 PM",
-      campaign: "Payment Reminders",
-      whatsappMessageId: null
-    },
-  ];
+  const [selectedCampaign, setSelectedCampaign] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Fetch campaigns for the dropdown
+  const { data: campaignsData } = useQuery({
+    queryKey: ['campaigns'],
+    queryFn: () => campaignApi.getAll(),
+  });
+
+  const campaigns = campaignsData?.data || [];
+
+  // Fetch messages for the selected campaign
+  const { messages, isLoading } = useCampaignMessages(selectedCampaign, {
+    ...(searchTerm && { search: searchTerm }),
+    ...(statusFilter !== "all" && { status: statusFilter }),
+  });
+
+  const filteredMessages = messages.filter(message => {
+    if (searchTerm) {
+      const searchRegex = new RegExp(searchTerm, 'i');
+      return searchRegex.test(message.contact.name) || 
+             searchRegex.test(message.contact.phone) || 
+             searchRegex.test(message.messageContent);
+    }
+    return true;
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -84,40 +85,97 @@ export default function MessageHistory() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Message History</h1>
-            <p className="text-gray-600">View all sent messages and their delivery status</p>
+            <p className="text-gray-600">
+              View messages from campaigns and their delivery status
+              {selectedCampaign && ` (${filteredMessages.length} messages)`}
+            </p>
           </div>
         </div>
 
+        {/* Campaign Selection */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <History className="w-5 h-5" />
-                All Messages
-              </CardTitle>
-              <div className="flex gap-2">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <Input placeholder="Search messages..." className="pl-10 w-64" />
-                </div>
-                <Button variant="outline" size="icon">
-                  <Filter className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Select Campaign
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div key={message.id} className="p-4 border rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a campaign to view messages" />
+                </SelectTrigger>
+                <SelectContent>
+                  {campaigns.map((campaign: any) => (
+                    <SelectItem key={campaign._id} value={campaign._id}>
+                      {campaign.name} ({campaign.status})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input 
+                  placeholder="Search messages..." 
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="delivered">Delivered</SelectItem>
+                  <SelectItem value="read">Read</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="w-5 h-5" />
+              Campaign Messages
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!selectedCampaign ? (
+              <div className="text-center py-8 text-gray-500">
+                <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>Please select a campaign to view its messages</p>
+              </div>
+            ) : isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                <p className="text-gray-500 mt-2">Loading messages...</p>
+              </div>
+            ) : filteredMessages.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No messages found for the selected campaign</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredMessages.map((message) => (
+                  <div key={message._id} className="p-4 border rounded-lg">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                         <MessageSquare className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <h4 className="font-medium">{message.contact}</h4>
-                        <p className="text-sm text-gray-500">{message.phone}</p>
+                        <h4 className="font-medium">{message.contact.name}</h4>
+                        <p className="text-sm text-gray-500">{message.contact.phone}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -130,24 +188,35 @@ export default function MessageHistory() {
                   
                   <div className="mb-3">
                     <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                      {message.message}
+                      {message.messageContent}
                     </p>
                   </div>
                   
                   <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>Campaign: {message.campaign}</span>
+                    <div className="flex items-center gap-4">
+                      <span>Status: {message.status}</span>
+                      {message.errorMessage && (
+                        <span className="text-red-500">Error: {message.errorMessage}</span>
+                      )}
+                    </div>
                     <div className="flex flex-col items-end">
-                      <span>{message.timestamp}</span>
+                      <span>{new Date(message.createdAt).toLocaleString()}</span>
                       {message.whatsappMessageId && (
                         <span className="text-xs text-gray-400">
-                          ID: {message.whatsappMessageId.substring(0, 20)}...
+                          WhatsApp ID: {message.whatsappMessageId.substring(0, 20)}...
+                        </span>
+                      )}
+                      {message.sentAt && (
+                        <span className="text-xs text-gray-400">
+                          Sent: {new Date(message.sentAt).toLocaleString()}
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

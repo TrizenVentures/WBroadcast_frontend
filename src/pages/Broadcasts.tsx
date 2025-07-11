@@ -43,6 +43,7 @@ export default function Broadcasts() {
 
   const setupSocketListeners = () => {
     socket.onCampaignStatusUpdate((data) => {
+      console.log('Campaign status update received:', data);
       setCampaigns(prev => prev.map(campaign => 
         campaign._id === data.campaignId 
           ? { ...campaign, status: data.status, progress: data.progress }
@@ -51,6 +52,7 @@ export default function Broadcasts() {
     });
 
     socket.onCampaignProgressUpdate((data) => {
+      console.log('Campaign progress update received:', data);
       setCampaigns(prev => prev.map(campaign => 
         campaign._id === data.campaignId 
           ? { ...campaign, progress: data.progress }
@@ -59,6 +61,7 @@ export default function Broadcasts() {
     });
 
     socket.onCampaignCompleted((data) => {
+      console.log('Campaign completed event received:', data);
       setCampaigns(prev => prev.map(campaign => 
         campaign._id === data.campaignId 
           ? { ...campaign, status: 'completed', progress: data.progress }
@@ -67,7 +70,7 @@ export default function Broadcasts() {
       
       toast({
         title: "Campaign Completed",
-        description: `Campaign has finished sending to all recipients.`,
+        description: `Campaign "${data.campaignName || 'Unknown'}" has finished sending to all recipients.`,
       });
     });
   };
