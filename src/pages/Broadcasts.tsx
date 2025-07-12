@@ -21,16 +21,22 @@ import { useToast } from "@/hooks/use-toast";
 import { campaignApi } from "@/services/api";
 import { useSocket } from "@/hooks/useSocket";
 import { format } from "date-fns";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function Broadcasts() {
   const [showNewForm, setShowNewForm] = useState(false);
-  const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const socket = useSocket();
 
+  // Use React Query for campaigns data
+  const { data: campaigns = [], isLoading: loading, error } = useQuery({
+    queryKey: ['campaigns'],
+    queryFn: () => campaignApi.getAll().then(res => res.data),
+    refetchInterval: 30000, // Fallback: refetch every 30 seconds
+  });
+
   useEffect(() => {
-    loadCampaigns();
     setupSocketListeners();
     
     return () => {
@@ -39,34 +45,49 @@ export default function Broadcasts() {
       socket.off('campaign-progress-update');
       socket.off('campaign-completed');
     };
-  }, []);
+  }, [socket]);
 
   const setupSocketListeners = () => {
     socket.onCampaignStatusUpdate((data) => {
       console.log('Campaign status update received:', data);
-      setCampaigns(prev => prev.map(campaign => 
-        campaign._id === data.campaignId 
-          ? { ...campaign, status: data.status, progress: data.progress }
-          : campaign
-      ));
+      
+      // Update the specific campaign in React Query cache
+      queryClient.setQueryData(['campaigns'], (oldCampaigns: any[]) => {
+        if (!oldCampaigns) return oldCampaigns;
+        return oldCampaigns.map(campaign => 
+          campaign._id === data.campaignId 
+            ? { ...campaign, status: data.status, progress: data.progress }
+            : campaign
+        );
+      });
     });
 
     socket.onCampaignProgressUpdate((data) => {
       console.log('Campaign progress update received:', data);
-      setCampaigns(prev => prev.map(campaign => 
-        campaign._id === data.campaignId 
-          ? { ...campaign, progress: data.progress }
-          : campaign
-      ));
+      
+      // Update the specific campaign progress in React Query cache
+      queryClient.setQueryData(['campaigns'], (oldCampaigns: any[]) => {
+        if (!oldCampaigns) return oldCampaigns;
+        return oldCampaigns.map(campaign => 
+          campaign._id === data.campaignId 
+            ? { ...campaign, progress: data.progress }
+            : campaign
+        );
+      });
     });
 
     socket.onCampaignCompleted((data) => {
       console.log('Campaign completed event received:', data);
-      setCampaigns(prev => prev.map(campaign => 
-        campaign._id === data.campaignId 
-          ? { ...campaign, status: 'completed', progress: data.progress }
-          : campaign
-      ));
+      
+      // Update the completed campaign in React Query cache
+      queryClient.setQueryData(['campaigns'], (oldCampaigns: any[]) => {
+        if (!oldCampaigns) return oldCampaigns;
+        return oldCampaigns.map(campaign => 
+          campaign._id === data.campaignId 
+            ? { ...campaign, status: 'completed', progress: data.progress }
+            : campaign
+        );
+      });
       
       toast({
         title: "Campaign Completed",
@@ -75,27 +96,15 @@ export default function Broadcasts() {
     });
   };
 
-  const loadCampaigns = async () => {
-    try {
-      setLoading(true);
-      const response = await campaignApi.getAll();
-      setCampaigns(response.data);
-    } catch (error) {
-      console.error('Error loading campaigns:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load campaigns",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleNewBroadcast = async (data: any) => {
     try {
       const response = await campaignApi.create(data);
-      setCampaigns(prev => [response.data, ...prev]);
+      
+      // Add new campaign to React Query cache
+      queryClient.setQueryData(['campaigns'], (oldCampaigns: any[]) => {
+        return [response.data, ...(oldCampaigns || [])];
+      });
+      
       setShowNewForm(false);
       
       // Join the campaign room for real-time updates
@@ -118,11 +127,16 @@ export default function Broadcasts() {
   const handleCancelCampaign = async (campaignId: string) => {
     try {
       await campaignApi.cancel(campaignId);
-      setCampaigns(prev => prev.map(campaign => 
-        campaign._id === campaignId 
-          ? { ...campaign, status: 'cancelled' }
-          : campaign
-      ));
+      
+      // Update campaign status in React Query cache
+      queryClient.setQueryData(['campaigns'], (oldCampaigns: any[]) => {
+        if (!oldCampaigns) return oldCampaigns;
+        return oldCampaigns.map(campaign => 
+          campaign._id === campaignId 
+            ? { ...campaign, status: 'cancelled' }
+            : campaign
+        );
+      });
       
       toast({
         title: "Campaign Cancelled",
@@ -141,11 +155,16 @@ export default function Broadcasts() {
   const handlePauseCampaign = async (campaignId: string) => {
     try {
       await campaignApi.pause(campaignId);
-      setCampaigns(prev => prev.map(campaign => 
-        campaign._id === campaignId 
-          ? { ...campaign, status: 'paused' }
-          : campaign
-      ));
+      
+      // Update campaign status in React Query cache
+      queryClient.setQueryData(['campaigns'], (oldCampaigns: any[]) => {
+        if (!oldCampaigns) return oldCampaigns;
+        return oldCampaigns.map(campaign => 
+          campaign._id === campaignId 
+            ? { ...campaign, status: 'paused' }
+            : campaign
+        );
+      });
       
       toast({
         title: "Campaign Paused",
@@ -164,11 +183,16 @@ export default function Broadcasts() {
   const handleResumeCampaign = async (campaignId: string) => {
     try {
       await campaignApi.resume(campaignId);
-      setCampaigns(prev => prev.map(campaign => 
-        campaign._id === campaignId 
-          ? { ...campaign, status: 'sending' }
-          : campaign
-      ));
+      
+      // Update campaign status in React Query cache
+      queryClient.setQueryData(['campaigns'], (oldCampaigns: any[]) => {
+        if (!oldCampaigns) return oldCampaigns;
+        return oldCampaigns.map(campaign => 
+          campaign._id === campaignId 
+            ? { ...campaign, status: 'sending' }
+            : campaign
+        );
+      });
       
       toast({
         title: "Campaign Resumed",
