@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Users, FileText, Clock, Send, Calendar } from "lucide-react";
 import { templateApi, contactApi } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
 interface NewBroadcastFormProps {
   onClose: () => void;
@@ -32,10 +33,19 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
 
   const { toast } = useToast();
 
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://wboardcast-backend.llp.trizenventures.com/api';
+
   useEffect(() => {
-    loadTemplates();
     loadContacts();
+    axios.get(`${API_BASE_URL}/templates/whatsapp/live`)
+      .then(res => {
+        const loadedTemplates = res.data.templates || [];
+        console.log("Loaded WhatsApp templates:", loadedTemplates);
+        setTemplates(loadedTemplates);
+      })
+      .catch(() => setTemplates([]));
   }, []);
+
 
   const loadTemplates = async () => {
     try {
@@ -65,19 +75,29 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
     }
   };
 
-  const selectedTemplateData = templates.find(t => t._id === selectedTemplate);
+  const selectedTemplateData = templates.find(t => t.name === selectedTemplate);
 
-  const isStructuredTemplate = selectedTemplateData?.whatsappTemplateName;
-  const hasButtons = selectedTemplateData?.whatsappConfig?.hasButtons;
+  // WhatsApp API: body is in components.find(c => c.type === "BODY")?.text
+  const bodyComponent = selectedTemplateData?.components?.find((c: any) => c.type === "BODY");
+  const buttonComponents = selectedTemplateData?.components?.filter((c: any) => c.type === "BUTTON") || [];
+  const variablesList =
+    bodyComponent?.text?.match(/\{\{(\d+)\}\}/g)?.map((v: string) => ({
+      name: v.replace(/[{}]/g, ""),
+      required: true,
+    })) || [];
+
+  const isStructuredTemplate = true; // All WhatsApp templates are structured
+  const hasButtons = buttonComponents.length > 0;
 
   const generatePreview = () => {
-    if (!selectedTemplateData) return '';
-    
-    let preview = selectedTemplateData.body;
-    Object.entries(variables).forEach(([key, value]) => {
-      preview = preview.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || `[${key.toUpperCase()}]`);
+    if (!bodyComponent?.text) return '';
+    let preview = bodyComponent.text;
+    variablesList.forEach((variable, idx) => {
+      preview = preview.replace(
+        new RegExp(`\\{\\{${idx + 1}\\}\\}`, 'g'),
+        variables[variable.name] || `[VAR${idx + 1}]`
+      );
     });
-    
     return preview;
   };
 
@@ -157,7 +177,9 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
 
       const data = {
         name: campaignName,
-        templateId: selectedTemplate,
+        templateName: selectedTemplateData.name,
+        templateLanguage: selectedTemplateData.language || 'en',
+        templateComponents: selectedTemplateData.components || [],
         contactIds: selectedContacts,
         variables,
         scheduledAt: scheduledAt.toISOString(),
@@ -212,7 +234,7 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
               </SelectTrigger>
               <SelectContent>
                 {templates.map((template) => (
-                  <SelectItem key={template._id} value={template._id}>
+                  <SelectItem key={template.name} value={template.name}>
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4" />
                       {template.name}
@@ -236,15 +258,13 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
                   </div>
                   {isStructuredTemplate && (
                     <div className="text-xs text-blue-700 space-y-1">
-                      <p>Template Name: <code className="bg-blue-100 px-1 rounded">{selectedTemplateData.whatsappTemplateName}</code></p>
+                      <p>Template Name: <code className="bg-blue-100 px-1 rounded">{selectedTemplateData.name}</code></p>
                       {hasButtons && (
                         <p className="flex items-center gap-1">
                           <span>Interactive buttons included</span>
-                          {selectedTemplateData.whatsappConfig?.buttons && (
-                            <span className="text-xs">
-                              ({selectedTemplateData.whatsappConfig.buttons.map(b => b.title).join(', ')})
-                            </span>
-                          )}
+                          <span className="text-xs">
+                            ({buttonComponents.map((b: any) => b.text).join(', ')})
+                          </span>
                         </p>
                       )}
                     </div>
@@ -264,20 +284,20 @@ export function NewBroadcastForm({ onClose, onSubmit }: NewBroadcastFormProps) {
                 </div>
               </div>
 
-              {selectedTemplateData.variables && selectedTemplateData.variables.length > 0 && (
+              {variablesList.length > 0 && (
                 <div className="space-y-3">
                   <Label>Template Variables</Label>
-                  {selectedTemplateData.variables.map((variable: any) => (
+                  {variablesList.map((variable: any, idx: number) => (
                     <div key={variable.name} className="space-y-1">
                       <Label htmlFor={variable.name} className="text-sm font-normal">
-                        {variable.name} {variable.required && <span className="text-red-500">*</span>}
+                        Variable {idx + 1} <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id={variable.name}
                         value={variables[variable.name] || ""}
                         onChange={(e) => setVariables(prev => ({ ...prev, [variable.name]: e.target.value }))}
-                        placeholder={`Enter value for {{${variable.name}}}`}
-                        required={variable.required}
+                        placeholder={`Enter value for {{${idx + 1}}}`}
+                        required
                       />
                     </div>
                   ))}
